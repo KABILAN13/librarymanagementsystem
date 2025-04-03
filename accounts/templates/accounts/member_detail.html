@@ -1,0 +1,30 @@
+{% extends "accounts/base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4>Member Details</h4>
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">Username:</dt>
+                <dd class="col-sm-9">{{ member.username }}</dd>
+
+                <dt class="col-sm-3">Email:</dt>
+                <dd class="col-sm-9">{{ member.email }}</dd>
+
+                <dt class="col-sm-3">Date Joined:</dt>
+                <dd class="col-sm-9">{{ member.date_joined|date:"F j, Y" }}</dd>
+
+                <dt class="col-sm-3">Last Login:</dt>
+                <dd class="col-sm-9">{{ member.last_login|date:"F j, Y H:i" }}</dd>
+            </dl>
+            
+            <a href="{% url 'member-list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Members
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

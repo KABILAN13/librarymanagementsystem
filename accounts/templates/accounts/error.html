@@ -1,0 +1,11 @@
+{% extends "accounts/base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="alert alert-danger">
+        <h4>Error Encountered</h4>
+        <p>{{ error }}</p>
+        <a href="{% url 'home' %}" class="btn btn-primary">Return Home</a>
+    </div>
+</div>
+{% endblock %}

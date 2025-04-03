@@ -1,0 +1,30 @@
+{% extends 'accounts/base.html' %}
+
+{% block content %}
+<div class="jumbotron">
+    <h1 class="display-4">{{ welcome_message }}</h1>
+    {% if user.is_authenticated %}
+        <p class="lead">Hello, {{ user.username }}!</p>
+    {% else %}
+        <p class="lead">Please log in to access the system.</p>
+    {% endif %}
+</div>
+
+<h3>Recent Books</h3>
+<div class="row">
+    {% for book in recent_books %}
+    <div class="col-md-3 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">{{ book.title }}</h5>
+                <p class="card-text">{{ book.author }}</p>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-warning">No books available yet.</div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
