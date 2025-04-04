@@ -1,30 +1,101 @@
 {% extends 'accounts/base.html' %}
 
 {% block content %}
-<div class="jumbotron">
-    <h1 class="display-4">{{ welcome_message }}</h1>
-    {% if user.is_authenticated %}
-        <p class="lead">Hello, {{ user.username }}!</p>
-    {% else %}
-        <p class="lead">Please log in to access the system.</p>
-    {% endif %}
-</div>
+<style>
+    .container {
+        max-width: 1200px;
+        margin: auto;
+        padding: 2rem;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
 
-<h3>Recent Books</h3>
-<div class="row">
-    {% for book in recent_books %}
-    <div class="col-md-3 mb-4">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">{{ book.title }}</h5>
-                <p class="card-text">{{ book.author }}</p>
+    .hero {
+        background: linear-gradient(135deg, #f3f4f6, #e0f7fa);
+        padding: 3rem 2rem;
+        border-radius: 1rem;
+        text-align: center;
+        margin-bottom: 3rem;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .hero h1 {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        color: #333;
+    }
+
+    .hero p {
+        font-size: 1.2rem;
+        color: #555;
+    }
+
+    .section-title {
+        font-size: 1.8rem;
+        margin-bottom: 1rem;
+        color: #222;
+    }
+
+    .book-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .book-card {
+        background-color: #fff;
+        padding: 1.5rem;
+        border-radius: 0.75rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+        transition: transform 0.2s ease;
+    }
+
+    .book-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .book-title {
+        font-size: 1.1rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        color: #2c3e50;
+    }
+
+    .book-author {
+        color: #777;
+    }
+
+    .alert {
+        background-color: #fff8e1;
+        border: 1px solid #ffe082;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        text-align: center;
+        color: #8d6e63;
+        font-weight: 500;
+    }
+</style>
+
+<div class="container">
+    <div class="hero">
+        <h1>{{ welcome_message }}</h1>
+        {% if user.is_authenticated %}
+            <p>Hello, <strong>{{ user.username }}</strong>! Welcome back to your library 📚</p>
+        {% else %}
+            <p>Please <a href="{% url 'login' %}">log in</a> to access the system.</p>
+        {% endif %}
+    </div>
+
+    <h2 class="section-title">Recent Books</h2>
+
+    <div class="book-grid">
+        {% for book in recent_books %}
+            <div class="book-card">
+                <div class="book-title">{{ book.title }}</div>
+                <div class="book-author">by {{ book.author }}</div>
             </div>
-        </div>
+        {% empty %}
+            <div class="alert">No books available yet. Check back soon!</div>
+        {% endfor %}
     </div>
-    {% empty %}
-    <div class="col-12">
-        <div class="alert alert-warning">No books available yet.</div>
-    </div>
-    {% endfor %}
 </div>
 {% endblock %}

@@ -12,6 +12,9 @@ from django.http import HttpResponse
 from django.db import connection
 
 
+def book_detail(request, pk):
+    book = get_object_or_404(Book, pk=pk)
+    return render(request, 'accounts/book_detail.html', {'book': book})
 
 @login_required
 def home(request):
