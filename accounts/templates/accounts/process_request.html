@@ -1,0 +1,42 @@
+{% extends 'accounts/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4><i class="fas fa-edit"></i> Process Book Request</h4>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <h5>{{ req.book_title }}</h5>
+                    <p><strong>Requested by:</strong> {{ req.member.get_full_name }}</p>
+                    <p><strong>Date requested:</strong> {{ req.request_date|date:"M d, Y" }}</p>
+                    <p><strong>Reason:</strong> {{ req.reason }}</p>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="response_notes" class="form-label">Response Notes</label>
+                        <textarea name="response_notes" class="form-control" rows="3"
+                            placeholder="Optional notes for the member..."></textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="submit" name="action" value="approve" class="btn btn-success me-md-2">
+                            <i class="fas fa-check"></i> Approve
+                        </button>
+                        <button type="submit" name="action" value="reject" class="btn btn-danger">
+                            <i class="fas fa-times"></i> Reject
+                        </button>
+                        <a href="{% url 'manage-requests' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Requests
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

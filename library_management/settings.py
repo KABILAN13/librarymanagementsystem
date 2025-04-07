@@ -58,7 +58,7 @@ ROOT_URLCONF = 'library_management.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -143,3 +143,7 @@ CRISPY_TEMPLATE_PACK = "bootstrap4"
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+DEFAULT_DAILY_FINE_RATE = 10.00  # $10 per day
+GRACE_PERIOD_DAYS = 3  # No fine for first 3 days late
+MAX_FINE_DAYS = 30  # Maximum days to charge fine for

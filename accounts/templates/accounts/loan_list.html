@@ -1,0 +1,176 @@
+{% extends 'accounts/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="fas fa-book-open me-2"></i>
+                    {% if user.is_librarian_or_admin %}All Loans{% else %}My Loans{% endif %}
+                </h4>
+                <span class="badge bg-light text-dark">
+                    {{ loans.count }} loan(s)
+                </span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Book</th>
+                            {% if user.is_librarian_or_admin %}<th>Member</th>{% endif %}
+                            <th>Checkout Date</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                            <th>Fine</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for loan in loans %}
+                        <tr class="{% if loan.is_overdue %}table-danger{% elif loan.due_soon %}table-warning{% endif %}">
+                            <td>
+                                <a href="{% url 'book-detail' loan.book.id %}" class="text-decoration-none">
+                                    <strong>{{ loan.book.title }}</strong>
+                                </a>
+                                {% if loan.quantity > 1 %}
+                                <span class="badge bg-secondary ms-2">
+                                    {{ loan.quantity }} copies
+                                </span>
+                                {% endif %}
+                            </td>
+                            
+                            {% if user.is_librarian_or_admin %}
+                            <td>
+                                <a href="{% url 'member-detail' loan.member.id %}" class="text-decoration-none">
+                                    {{ loan.member.get_full_name }}
+                                </a>
+                            </td>
+                            {% endif %}
+                            
+                            <td>{{ loan.checkout_date|date:"M d, Y" }}</td>
+                            <td>
+                                {{ loan.due_date|date:"M d, Y" }}
+                                {% if loan.is_overdue %}
+                                <span class="badge bg-danger ms-2">
+                                    {{ loan.days_overdue }} day(s) overdue
+                                </span>
+                                {% elif loan.due_soon %}
+                                <span class="badge bg-warning text-dark ms-2">
+                                    Due soon
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if loan.returned %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check-circle me-1"></i> Returned
+                                </span>
+                                {% else %}
+                                <span class="badge {% if loan.is_overdue %}bg-danger{% elif loan.due_soon %}bg-warning text-dark{% else %}bg-primary{% endif %}">
+                                    <i class="fas fa-book me-1"></i>
+                                    {% if loan.is_overdue %}Overdue{% elif loan.due_soon %}Due Soon{% else %}Active{% endif %}
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if loan.is_overdue %}
+                                <span class="badge bg-danger">
+                                    ${{ loan.total_fine|floatformat:2 }}
+                                </span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    {% if not loan.returned and user.is_librarian_or_admin %}
+                                    <a href="{% url 'return-book' loan.id %}" 
+                                       class="btn {% if loan.is_overdue %}btn-danger{% else %}btn-warning{% endif %}"
+                                       title="Return this book"
+                                       data-bs-toggle="tooltip">
+                                        <i class="fas fa-undo-alt"></i>
+                                    </a>
+                                    {% endif %}
+                                    <a href="{% url 'loan-detail' loan.id %}" 
+                                       class="btn btn-info"
+                                       title="View details"
+                                       data-bs-toggle="tooltip">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="{% if user.is_librarian_or_admin %}7{% else %}6{% endif %}" class="text-center py-4">
+                                <i class="fas fa-book-open fa-2x text-muted mb-3"></i>
+                                <p class="h5 text-muted">No loan records found</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            {% if loans.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if loans.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1" aria-label="First">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ loans.previous_page_number }}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in loans.paginator.page_range %}
+                        {% if loans.number == num %}
+                        <li class="page-item active">
+                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                        </li>
+                        {% elif num > loans.number|add:'-3' and num < loans.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if loans.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ loans.next_page_number }}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ loans.paginator.num_pages }}" aria-label="Last">
+                            <span aria-hidden="true">&raquo;&raquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Enable tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+})
+</script>
+{% endblock %}

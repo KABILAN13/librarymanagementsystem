@@ -1,0 +1,66 @@
+{% extends 'accounts/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-danger text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i> Overdue Books Report
+                </h4>
+                <span class="badge bg-light text-dark">
+                    {{ checkouts.count }} overdue book(s)
+                </span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Book</th>
+                            <th>Member</th>
+                            <th>Checkout Date</th>
+                            <th>Due Date</th>
+                            <th>Days Overdue</th>
+                            <th>Fine</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for checkout in checkouts %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'book-detail' checkout.book.id %}">
+                                    {{ checkout.book.title }}
+                                </a>
+                            </td>
+                            <td>
+                                <a href="{% url 'member-detail' checkout.member.id %}">
+                                    {{ checkout.member.get_full_name }}
+                                </a>
+                            </td>
+                            <td>{{ checkout.checkout_date|date:"M d, Y" }}</td>
+                            <td>{{ checkout.due_date|date:"M d, Y" }}</td>
+                            <td class="text-danger">{{ checkout.days_overdue }}</td>
+                            <td>${{ checkout.total_fine|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <i class="fas fa-check-circle fa-2x text-success mb-3"></i>
+                                <p class="h5 text-muted">No overdue books found</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-3">
+                <a href="{% url 'generate-overdue-pdf' %}" class="btn btn-danger">
+                    <i class="fas fa-file-pdf me-2"></i> Generate PDF Report
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

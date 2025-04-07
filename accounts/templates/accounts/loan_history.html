@@ -1,0 +1,43 @@
+{% extends 'accounts/base.html' %}
+
+{% block content %}
+<h2>Loan History</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Book</th>
+            <th>Member</th>
+            <th>Checkout Date</th>
+            <th>Return Date</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for checkout in checkouts %}
+        <tr>
+            <td>{{ checkout.book.title }}</td>
+            <td>{{ checkout.member.get_full_name }}</td>
+            <td>{{ checkout.checkout_date|date:"M d, Y" }}</td>
+            <td>
+                {% if checkout.returned %}
+                    {{ checkout.return_date|date:"M d, Y" }}
+                {% else %}
+                    Not returned
+                {% endif %}
+            </td>
+            <td>
+                {% if checkout.returned %}
+                    <span class="badge bg-success">Returned</span>
+                {% else %}
+                    <span class="badge bg-warning">Active</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="5">No loan history</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

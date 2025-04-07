@@ -13,7 +13,6 @@
     
     <!-- Custom CSS -->
     <style>
-        
         body {
             padding-top: 20px;
             background-color: #f8f9fa;
@@ -49,6 +48,45 @@
         .alert-welcome {
             border-left: 5px solid;
         }
+        
+        /* New styles for dropdown menus */
+        .dropdown-menu {
+            border: none;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+        
+        .dropdown-item {
+            padding: 0.5rem 1.5rem;
+            transition: all 0.2s;
+        }
+        
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+            padding-left: 1.8rem;
+        }
+        
+        .dropdown-divider {
+            margin: 0.3rem 0;
+        }
+        
+        /* Badge notification styles */
+        .nav-notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            font-size: 0.6rem;
+            padding: 0.25em 0.4em;
+        }
+        
+        .nav-link-with-notification {
+            position: relative;
+        }
+        
+        @media (min-width: 992px) {
+            .nav-item.dropdown:hover .dropdown-menu {
+                display: block;
+            }
+        }
     </style>
 </head>
 <body>
@@ -72,10 +110,18 @@
                     
                     {% if user.is_authenticated %}
                         {% if user.is_librarian or user.is_admin %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'book-list' %}">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="booksDropdown" role="button" data-bs-toggle="dropdown">
                                 <i class="fas fa-book"></i> Books
                             </a>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="{% url 'book-list' %}">
+                                    <i class="fas fa-list"></i> All Books
+                                </a>
+                                <a class="dropdown-item" href="{% url 'book-add' %}">
+                                    <i class="fas fa-plus-circle"></i> Add New Book
+                                </a>
+                            </div>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'member-list' %}">
@@ -84,8 +130,68 @@
                         </li>
                         {% else %}
                         <li class="nav-item">
-                            <a class="nav-link" href="#">
-                                <i class="fas fa-search"></i> Browse
+                            <a class="nav-link" href="{% url 'book-list' %}">
+                                <i class="fas fa-search"></i> Browse Books
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% if user.is_librarian_or_admin %}
+                            <li class="nav-item">
+                            <a class="nav-link" href="{% url 'due-date-report' %}">
+                            <i class="fas fa-calendar-exclamation"></i> Due Dates
+                            </a>
+                            </li>
+                        {% endif %}
+                        
+                        <!-- Loans Dropdown for All Users -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="loansDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-book-open"></i> Loans
+                            </a>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="{% url 'active-loans' %}">
+                                    <i class="fas fa-clipboard-list"></i> My Active Loans
+                                </a>
+                                <a class="dropdown-item" href="{% url 'loan-history' %}">
+                                    <i class="fas fa-history"></i> My Loan History
+                                </a>
+                                {% if user.is_librarian or user.is_admin %}
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="{% url 'issue-book' %}">
+                                    <i class="fas fa-hand-holding"></i> Issue Books
+                                </a>
+                                <a class="dropdown-item" href="{% url 'loan-list' %}">
+                                    <i class="fas fa-tasks"></i> Manage All Loans
+                                </a>
+                                {% endif %}
+                            </div>
+                        </li>
+                        
+                        <!-- Book Requests Section -->
+                        {% if user.is_member %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="requestsDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-question-circle"></i> Requests
+                            </a>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="{% url 'request-book' %}">
+                                    <i class="fas fa-plus"></i> New Book Request
+                                </a>
+                                <a class="dropdown-item" href="{% url 'my-requests' %}">
+                                    <i class="fas fa-list"></i> My Requests
+                                </a>
+                            </div>
+                        </li>
+                        {% endif %}
+                        
+                        {% if user.is_librarian_or_admin %}
+                        <li class="nav-item">
+                            <a class="nav-link nav-link-with-notification" href="{% url 'manage-requests' %}">
+                                <i class="fas fa-tasks"></i> Manage Requests
+                                {% if pending_requests_count > 0 %}
+                                <span class="badge bg-danger nav-notification-badge">{{ pending_requests_count }}</span>
+                                {% endif %}
                             </a>
                         </li>
                         {% endif %}
@@ -101,6 +207,9 @@
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li><a class="dropdown-item" href="{% url 'profile' %}">
                                     <i class="fas fa-user"></i> Profile
+                                </a></li>
+                                <li><a class="dropdown-item" href="{% url 'profile-update' %}">
+                                    <i class="fas fa-user-edit"></i> Edit Profile
                                 </a></li>
                                 <li><a class="dropdown-item" href="{% url 'password-change' %}">
                                     <i class="fas fa-key"></i> Change Password
@@ -123,6 +232,21 @@
                             </a>
                         </li>
                     {% endif %}
+                    {% if user.is_staff or user.is_librarian_or_admin %}
+<li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle" href="#" id="reportsDropdown" role="button" data-bs-toggle="dropdown">
+        <i class="fas fa-file-alt"></i> Reports
+    </a>
+    <div class="dropdown-menu">
+        <a class="dropdown-item" href="{% url 'issued-books-report' %}">
+            <i class="fas fa-book"></i> Issued Books
+        </a>
+        <a class="dropdown-item" href="{% url 'overdue-books-report' %}">
+            <i class="fas fa-exclamation-triangle"></i> Overdue Books
+        </a>
+    </div>
+</li>
+{% endif %}
                 </ul>
             </div>
         </div>

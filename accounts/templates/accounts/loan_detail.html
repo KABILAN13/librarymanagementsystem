@@ -1,0 +1,66 @@
+{% extends 'accounts/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4><i class="fas fa-book"></i> Loan Details</h4>
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">Book</dt>
+                <dd class="col-sm-9">
+                    <a href="{% url 'book-detail' loan.book.id %}">
+                        {{ loan.book.title }}
+                    </a>
+                </dd>
+
+                <dt class="col-sm-3">Member</dt>
+                <dd class="col-sm-9">
+                    <a href="{% url 'member-detail' loan.member.id %}">
+                        {{ loan.member.get_full_name }}
+                    </a>
+                </dd>
+
+                <dt class="col-sm-3">Checkout Date</dt>
+                <dd class="col-sm-9">{{ loan.checkout_date|date:"M d, Y" }}</dd>
+
+                <dt class="col-sm-3">Due Date</dt>
+                <dd class="col-sm-9">
+                    {{ loan.due_date|date:"M d, Y" }}
+                    {% if loan.is_overdue %}
+                    <span class="badge bg-danger ms-2">
+                        Overdue by {{ loan.days_overdue }} day(s)
+                    </span>
+                    {% endif %}
+                </dd>
+
+                {% if loan.returned %}
+                <dt class="col-sm-3">Return Date</dt>
+                <dd class="col-sm-9">{{ loan.return_date|date:"M d, Y" }}</dd>
+                {% endif %}
+
+                {% if loan.is_overdue %}
+                <dt class="col-sm-3">Fine</dt>
+                <dd class="col-sm-9">
+                    <span class="badge bg-danger">
+                        ${{ loan.total_fine|floatformat:2 }}
+                    </span>
+                </dd>
+                {% endif %}
+            </dl>
+
+            <div class="mt-4">
+                {% if can_return %}
+                <a href="{% url 'return-book' loan.id %}" class="btn btn-warning">
+                    <i class="fas fa-undo-alt"></i> Return Book
+                </a>
+                {% endif %}
+                <a href="{% url 'loan-history' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to History
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

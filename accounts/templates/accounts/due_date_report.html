@@ -1,0 +1,101 @@
+{% extends 'accounts/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4><i class="fas fa-calendar-alt"></i> Due Date Tracking</h4>
+        </div>
+        <div class="card-body">
+            
+            <!-- Overdue Section -->
+            <div class="mb-4">
+                <h5 class="text-danger">
+                    <i class="fas fa-exclamation-triangle"></i> Overdue Books
+                    <span class="badge bg-danger">{{ overdue.count }}</span>
+                </h5>
+                {% if overdue %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr class="table-danger">
+                                <th>Book</th>
+                                <th>Member</th>
+                                <th>Due Date</th>
+                                <th>Days Overdue</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for checkout in overdue %}
+                            <tr>
+                                <td>{{ checkout.book.title }}</td>
+                                <td>{{ checkout.member.get_full_name }}</td>
+                                <td>{{ checkout.due_date|date:"M d, Y" }}</td>
+                                <td class="text-danger fw-bold">{{ checkout.days_overdue }}</td>
+                                <td>
+                                    <a href="{% url 'return-book' checkout.id %}" 
+                                       class="btn btn-sm btn-warning">
+                                        <i class="fas fa-book-return"></i> Return
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i> No overdue books!
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Due Soon Section -->
+            <div>
+                <h5 class="text-warning">
+                    <i class="fas fa-clock"></i> Due Soon (Next 3 Days)
+                    <span class="badge bg-warning text-dark">{{ due_soon.count }}</span>
+                </h5>
+                {% if due_soon %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr class="table-warning">
+                                <th>Book</th>
+                                <th>Member</th>
+                                <th>Due Date</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for checkout in due_soon %}
+                            <tr>
+                                <td>{{ checkout.book.title }}</td>
+                                <td>{{ checkout.member.get_full_name }}</td>
+                                <td>{{ checkout.due_date|date:"M d, Y" }}</td>
+                                <td class="text-warning fw-bold">
+                                    Due in {{ checkout.due_date|timeuntil }}
+                                </td>
+                                <td>
+                                    <a href="{% url 'member-detail' checkout.member.id %}" 
+                                       class="btn btn-sm btn-info">
+                                        <i class="fas fa-user"></i> Contact
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i> No books due in next 3 days!
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

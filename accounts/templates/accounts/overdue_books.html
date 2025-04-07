@@ -1,0 +1,46 @@
+{% extends 'accounts/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-danger text-white">
+            <h4><i class="fas fa-exclamation-triangle"></i> Overdue Books Report</h4>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Book</th>
+                            <th>Member</th>
+                            <th>Checkout Date</th>
+                            <th>Due Date</th>
+                            <th>Days Overdue</th>
+                            <th>Fine</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for checkout in checkouts %}
+                        <tr>
+                            <td>{{ checkout.book.title }}</td>
+                            <td>{{ checkout.member.get_full_name }}</td>
+                            <td>{{ checkout.checkout_date|date:"M d, Y" }}</td>
+                            <td>{{ checkout.due_date|date:"M d, Y" }}</td>
+                            <td class="text-danger">{{ checkout.days_overdue }}</td>
+                            <td>${{ checkout.total_fine|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center">No overdue books found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <a href="{% url 'generate-overdue-pdf' %}" class="btn btn-danger mt-3">
+                <i class="fas fa-file-pdf"></i> Generate PDF
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
