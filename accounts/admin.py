@@ -1,8 +1,9 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.db import connection
+from django.dispatch import receiver
 from django.utils import timezone
-from .models import Book, Checkout, CustomUser
+from .models import Book, BookSubscription, Checkout, CustomUser, Reservation
 from .forms import UserRegisterForm
 from accounts import models
 
@@ -55,8 +56,14 @@ class BookAdmin(admin.ModelAdmin):
     list_filter = ['genre', 'author']
     search_fields = ['title', 'author', 'isbn']
     readonly_fields = ['available']
-    actions = ['reset_availability']
+    actions = ['reset_availability','send_new_book_notifications']
     
+    def send_new_book_notifications(self, request, queryset):
+        for book in queryset:
+            book.notify_subscribers_about_new_book()
+        self.message_user(request, f"Notifications sent for {queryset.count()} books")
+    send_new_book_notifications.short_description = "Send new book notifications"
+
     def available_copies(self, obj):
         return obj.available
     available_copies.short_description = 'Available'
@@ -99,8 +106,10 @@ class CheckoutAdmin(admin.ModelAdmin):
     list_filter = ['returned', 'checkout_date', 'due_date']
     search_fields = ['book__title', 'member__username']
     date_hierarchy = 'checkout_date'
-    actions = ['mark_returned','send_overdue_notices','recalculate_fines']
+    actions = ['mark_returned','send_due_notifications','send_overdue_notices','recalculate_fines']
     
+    
+
     def book_title(self, obj):
         return obj.book.title
     book_title.short_description = 'Book'
@@ -148,3 +157,33 @@ class CheckoutAdmin(admin.ModelAdmin):
         )
         # Add your email sending logic here
         self.message_user(request, f"{overdue.count()} overdue notices sent")
+    
+    def send_due_notifications(self, request, queryset):
+        count = 0
+        for checkout in queryset:
+            checkout.send_due_notification()
+            count += 1
+        self.message_user(request, f"{count} notifications sent")
+    send_due_notifications.short_description = "Send due date notifications"
+
+@admin.register(Reservation)
+class ReservationAdmin(admin.ModelAdmin):
+    actions = ['send_available_notifications']
+    
+    def send_available_notifications(self, request, queryset):
+        count = 0
+        for reservation in queryset:
+            reservation.send_available_notification()
+            reservation.notified = True
+            reservation.save()
+            count += 1
+        self.message_user(request, f"{count} notifications sent")
+    send_available_notifications.short_description = "Send availability notifications"
+
+@admin.register(BookSubscription)
+class BookSubscriptionAdmin(admin.ModelAdmin):
+    list_display = ('member', 'genre', 'is_active')
+    list_filter = ('genre', 'is_active')
+    search_fields = ('member__username', 'member__email')
+
+

@@ -1,0 +1,15 @@
+{% extends "accounts/emails/base.html" %}
+
+{% block content %}
+<h2>Book Due Date Reminder</h2>
+<p>Hello {{ member.first_name }},</p>
+
+<p>This is a reminder that your borrowed book <strong>{{ book.title }}</strong> 
+is due on <strong>{{ due_date|date:"F j, Y" }}</strong>.</p>
+
+<p>You have {{ days_remaining }} day(s) remaining to return or renew the book.</p>
+
+<a href="{{ site_url }}" class="button">Visit Library Website</a>
+
+<p>Thank you for using our library services!</p>
+{% endblock %}

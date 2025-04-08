@@ -1,0 +1,15 @@
+{% extends "accounts/emails/base.html" %}
+
+{% block content %}
+<h2>Book Reservation Available</h2>
+<p>Hello {{ member.first_name }},</p>
+
+<p>We're pleased to inform you that your reserved book 
+<strong>{{ book.title }}</strong> is now available for pickup.</p>
+
+<p>Please collect it before {{ pickup_deadline|date:"F j, Y" }} or your reservation will be canceled.</p>
+
+<a href="{{ site_url }}" class="button">Visit Library Website</a>
+
+<p>Thank you for using our library services!</p>
+{% endblock %}

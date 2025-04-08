@@ -13,6 +13,8 @@ urlpatterns = [
     path('reports/overdue-books/', views.OverdueBooksReportView.as_view(), name='overdue-books-report'),
     path('reports/issued-books/pdf/', views.generate_issued_pdf, name='generate-issued-pdf'),
     path('reports/overdue-books/pdf/', views.generate_overdue_pdf, name='generate-overdue-pdf'),
+    path('notifications/send-due-notifications/', views.send_due_notifications, name='send-due-notifications'),
+    path('notifications/send-reservation-notifications/', views.send_reservation_notifications, name='send-reservation-notifications'),
     path('profile/update/', views.profile_update, name='profile-update'),
     path('password-change/',
          auth_views.PasswordChangeView.as_view(
@@ -32,6 +34,9 @@ urlpatterns = [
         path('manage/', views.manage_requests, name='manage-requests'),
         path('process/<int:pk>/', views.process_request, name='process-request'),
     ])),
+
+    path('books/subscribe/<str:genre>/', views.subscribe_to_genre, name='subscribe-genre'),
+    path('books/unsubscribe/<str:genre>/', views.unsubscribe_from_genre, name='unsubscribe-genre'),
     path('reports/due-dates/', views.due_date_report, name='due-date-report'),
     path('loans/<int:checkout_id>/return/', views.return_book, name='return-book'),
     path('members/<int:pk>/', views.member_detail, name='member-detail'),

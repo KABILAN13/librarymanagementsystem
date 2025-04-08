@@ -1,3 +1,4 @@
+from venv import logger
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.forms import ValidationError
@@ -5,7 +6,18 @@ from django.urls import reverse
 from django.utils import timezone
 from django.db import transaction
 from django.conf import settings
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.conf import settings
 from datetime import timedelta
+from django.core.mail import send_mail
+from django.conf import settings
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+from psutil import users
+import requests
+
+from library_management.settings import DEFAULT_DAILY_FINE_RATE, GRACE_PERIOD_DAYS, MAX_FINE_DAYS  # For SMS API integration
 
 
 class CustomUser(AbstractUser):
@@ -53,16 +65,52 @@ class Book(models.Model):
     available = models.PositiveIntegerField(default=1, verbose_name="Available Copies")
     description = models.TextField(blank=True)
     cover_image = models.ImageField(upload_to='book_covers/', blank=True, null=True)
-    
+    notify_subscribers = models.BooleanField(
+        default=True,
+        help_text="Send notifications to genre subscribers when this book is added"
+    )
+
     def __str__(self):
         return f"{self.title} by {self.author}"
     
     def save(self, *args, **kwargs):
-        """Ensure availability stays within bounds"""
-        if not self.pk:  # New book
-            self.available = self.quantity
-        self.available = max(0, min(self.available, self.quantity))
+        is_new = self.pk is None  # Check if this is a new book
         super().save(*args, **kwargs)
+        if is_new and self.notify_subscribers:
+            self.notify_subscribers_about_new_book()
+
+    def notify_subscribers_about_new_book(self):
+        """Send notifications to subscribers of this book's genre"""
+        from .models import BookSubscription  # Import here to avoid circular imports
+        
+        subscriptions = BookSubscription.objects.filter(
+            genre=self.genre,
+            is_active=True
+        ).select_related('member')
+        
+        for subscription in subscriptions:
+            self.send_new_book_notification(subscription.member)
+
+    def send_new_book_notification(self, member):
+        """Send email notification to a single member"""
+        subject = f"New Book in {self.get_genre_display()}: {self.title}"
+        context = {
+            'book': self,
+            'member': member,
+            'site_url': settings.SITE_URL
+        }
+        
+        html_message = render_to_string('accounts/emails/new_book_notification.html', context)
+        plain_message = strip_tags(html_message)
+        
+        send_mail(
+            subject=subject,
+            message=plain_message,
+            html_message=html_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[member.email],
+            fail_silently=False
+        )
 
     def can_checkout(self):
         """Check if book is available for checkout"""
@@ -245,29 +293,29 @@ class Checkout(models.Model):
     
     
     def calculate_fine(self):
-        """Calculate and update the fine for late returns"""
+        """Calculate fine based on grace period and max cap"""
         if not self.returned and self.due_date < timezone.now():
-            days_late = (timezone.now() - self.due_date).days
-            self.total_fine = days_late * self.daily_fine_rate
-            self.save()
-        return self.total_fine
-    
+            days_late = (timezone.now().date() - self.due_date).days - GRACE_PERIOD_DAYS
+            days_late = min(max(days_late, 0), MAX_FINE_DAYS)  # Clamp to 0...30
+            return days_late * self.daily_fine_rate
+        return 0.0
+
     def save(self, *args, **kwargs):
         """Auto-calculate fine when saving"""
         if not self.pk:  # New checkout
-            self.daily_fine_rate = settings.DEFAULT_DAILY_FINE_RATE
-        
-        if self.returned and self.return_date:
-            # Calculate final fine if returned late
-            if self.return_date > self.due_date:
-                days_late = (self.return_date - self.due_date).days
-                self.total_fine = days_late * self.daily_fine_rate
-        else:
-            # Calculate current fine for active late checkouts
-            self.calculate_fine()
-            
-        super().save(*args, **kwargs)
+            self.daily_fine_rate = DEFAULT_DAILY_FINE_RATE
 
+        if self.returned and self.return_date:
+            # Final fine on return
+            days_late = (self.return_date - self.due_date).days - GRACE_PERIOD_DAYS
+            days_late = min(max(days_late, 0), MAX_FINE_DAYS)
+            self.total_fine = days_late * self.daily_fine_rate
+        else:
+            # Ongoing checkout, update fine
+            self.total_fine = self.calculate_fine()
+
+        super().save(*args, **kwargs)
+        
     @classmethod
     def get_issued_books_report(cls):
         """Generate report of all currently issued books"""
@@ -281,6 +329,56 @@ class Checkout(models.Model):
         
         overdue = cls.objects.filter(returned=False,due_date__lt=timezone.now() - timedelta(days=days_threshold))
         return overdue.select_related('book', 'member')
+    
+
+    def send_due_notification(self):
+        """Send notification about upcoming due date"""
+        subject = f"Reminder: {self.book.title} due soon"
+        context = {
+            'book': self.book,
+            'due_date': self.due_date,
+            'member': self.member,
+            'days_remaining': (self.due_date - timezone.now()).days
+        }
+        
+        # Email notification
+        html_message = render_to_string('accounts/emails/due_notification.html', context)
+        plain_message = strip_tags(html_message)
+        
+        send_mail(
+            subject=subject,
+            message=plain_message,
+            html_message=html_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[self.member.email],
+            fail_silently=False
+        )
+        
+        # SMS notification (optional)
+        if hasattr(settings, 'SMS_API_KEY') and self.member.phone:
+            self.send_sms_notification(context)
+
+    def send_sms_notification(self, context):
+        """Send SMS using external API (Twilio example)"""
+        message = (
+            f"Hi {context['member'].first_name}, "
+            f"'{context['book'].title}' is due on {context['due_date'].strftime('%b %d')}. "
+            f"Please return or renew it soon."
+        )
+        
+        try:
+            response = requests.post(
+                "https://api.twilio.com/2010-04-01/Accounts/ACXXXXXX/Messages.json",
+                auth=(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN),
+                data={
+                    'From': settings.TWILIO_PHONE_NUMBER,
+                    'To': self.member.phone,
+                    'Body': message
+                }
+            )
+            response.raise_for_status()
+        except Exception as e:
+            logger.error(f"SMS sending failed: {str(e)}")
 
 class BookRequest(models.Model):
     STATUS_CHOICES = [
@@ -304,3 +402,85 @@ class BookRequest(models.Model):
 
     class Meta:
         ordering = ['-request_date']
+
+
+class Reservation(models.Model):
+    member = models.ForeignKey(
+        CustomUser, 
+        on_delete=models.CASCADE,
+        related_name='reservations'
+    )
+    book = models.ForeignKey(
+        Book,
+        on_delete=models.CASCADE,
+        related_name='reservations'
+    )
+    reservation_date = models.DateTimeField(auto_now_add=True)
+    notified = models.BooleanField(default=False)
+    fulfilled = models.BooleanField(default=False)
+    expiry_date = models.DateTimeField(
+        default=timezone.now() + timezone.timedelta(days=3)
+    )
+
+    def send_available_notification(self):
+        """Send notification when reserved book becomes available"""
+        subject = f"Your reserved book '{self.book.title}' is available"
+        context = {
+            'book': self.book,
+            'member': self.member,
+            'pickup_deadline': timezone.now() + timedelta(days=3),
+            'site_name': settings.SITE_NAME,
+            'site_url': settings.SITE_URL
+        }
+        
+        html_message = render_to_string('accounts/emails/reservation_available.html', context)
+        plain_message = strip_tags(html_message)
+        
+        send_mail(
+            subject=subject,
+            message=plain_message,
+            html_message=html_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[self.member.email],
+            fail_silently=False
+        )
+
+    def __str__(self):
+        return f"{self.member.username}'s reservation for {self.book.title}"
+
+    class Meta:
+        ordering = ['reservation_date']
+
+class BookSubscription(models.Model):
+    member = models.ForeignKey(
+        CustomUser, 
+        on_delete=models.CASCADE,
+        related_name='book_subscriptions'
+    )
+    genre = models.CharField(
+        max_length=3,
+        choices=Book.GENRE_CHOICES
+    )
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def send_new_book_notification(self, book):
+        subject = f"New Book in {self.get_genre_display()}: {book.title}"
+        context = {
+            'book': book,
+            'member': self.member,
+            'genre': self.get_genre_display(),
+            'site_url': settings.SITE_URL
+        }
+        
+        html_message = render_to_string('accounts/emails/new_book_notification.html', context)
+        plain_message = strip_tags(html_message)
+        
+        send_mail(
+            subject=subject,
+            message=plain_message,
+            html_message=html_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[self.member.email],
+            fail_silently=False
+        )

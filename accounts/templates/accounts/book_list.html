@@ -1,5 +1,6 @@
 {% extends 'accounts/base.html' %}
 {% load crispy_forms_tags %}
+{% load book_filters %} 
 
 {% block content %}
 <div class="container mt-4">
@@ -58,6 +59,7 @@
                             <th>Author</th>
                             <th>Genre</th>
                             <th>Available</th>
+                            <th>Subscribe</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -78,6 +80,9 @@
                                 <a href="{% url 'book-detail' book.pk %}">
                                     {{ book.title|truncatechars:30 }}
                                 </a>
+                                {% if book.is_new %}
+                                <span class="badge bg-info">New</span>
+                                {% endif %}
                             </td>
                             <td>{{ book.author|truncatechars:20 }}</td>
                             <td>{{ book.get_genre_display }}</td>
@@ -86,6 +91,25 @@
                                     {{ book.available }}/{{ book.quantity }}
                                 </span>
                             </td>
+                            <td>
+                                {% if user.is_authenticated and not user.is_librarian and not user.is_admin %}
+                                    {% with subscription=user.book_subscriptions.all|filter_genre:book.genre %}
+                                        {% if subscription %}
+                                            <a href="{% url 'unsubscribe-genre' book.genre %}" 
+                                            class="btn btn-sm btn-outline-warning"
+                                            title="Unsubscribe from {{ book.get_genre_display }} alerts">
+                                            <i class="fas fa-bell-slash"></i>
+                                        </a>
+                                {% else %}
+                                    <a href="{% url 'subscribe-genre' book.genre %}" 
+                                    class="btn btn-sm btn-outline-primary"
+                                    title="Get alerts for new {{ book.get_genre_display }} books">
+                                    <i class="fas fa-bell"></i>
+                                    </a>
+                                {% endif %}
+                            {% endwith %}
+                        {% endif %}
+                        </td>
                             <td>
                                 <div class="btn-group btn-group-sm">
                                     <a href="{% url 'book-detail' book.pk %}" 
@@ -112,7 +136,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" class="text-center py-4">
+                            <td colspan="7" class="text-center py-4">
                                 <i class="fas fa-book-open fa-2x text-muted mb-2"></i>
                                 <p class="mb-0">No books found</p>
                                 {% if user.is_librarian or user.is_admin %}
@@ -168,4 +192,13 @@
     </nav>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Enable tooltips
+$(function () {
+    $('[title]').tooltip();
+});
+</script>
 {% endblock %}

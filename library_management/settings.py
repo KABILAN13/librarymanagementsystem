@@ -147,3 +147,22 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_DAILY_FINE_RATE = 10.00  # $10 per day
 GRACE_PERIOD_DAYS = 3  # No fine for first 3 days late
 MAX_FINE_DAYS = 30  # Maximum days to charge fine for
+
+
+# Email settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # e.g., smtp.gmail.com
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'kabilan11133@gmail.com'
+EMAIL_HOST_PASSWORD = 'dhoc wupn mgbj nred'
+DEFAULT_FROM_EMAIL = 'noreply@yourdomain.com'
+
+# SMS settings (Twilio example)
+TWILIO_ACCOUNT_SID = 'your_account_sid'
+TWILIO_AUTH_TOKEN = 'your_auth_token'
+TWILIO_PHONE_NUMBER = '+1234567890'
+
+# Site info for emails
+SITE_NAME = "Your Library Name"
+SITE_URL = "https://yourlibrarydomain.com"

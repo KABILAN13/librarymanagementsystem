@@ -43,7 +43,7 @@ class CheckoutForm(forms.ModelForm):
         
         if book and quantity:
             if book.available < quantity:
-                raise ValidationError(
+                raise forms.ValidationError(
                     f"Only {book.available} copy(s) available - you requested {quantity}"
                 )
         return cleaned_data
@@ -106,8 +106,9 @@ class UserUpdateForm(forms.ModelForm):
 class BookForm(forms.ModelForm):
     class Meta:
         model = Book
-        fields = ['title', 'author', 'genre', 'isbn', 'publisher', 
-                 'publication_date', 'quantity', 'available', 'description', 'cover_image']
+        fields = fields = ['title', 'author', 'genre', 'isbn', 'publisher', 
+                 'publication_date', 'quantity', 'available', 
+                 'description', 'cover_image', 'notify_subscribers']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
             'author': forms.TextInput(attrs={'class': 'form-control'}),

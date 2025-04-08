@@ -9,6 +9,9 @@ from django.db import transaction
 from django.utils import timezone
 from django.views.generic import ListView
 from io import BytesIO
+from django.contrib.auth.decorators import user_passes_test
+from django.http import JsonResponse
+from .models import Checkout, Reservation, BookSubscription
 from django.http import HttpResponse
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
@@ -45,6 +48,25 @@ def register(request):
     else:
         form = UserRegisterForm()
     return render(request, 'accounts/register.html', {'form': form})
+
+@login_required
+def subscribe_to_genre(request, genre):
+    BookSubscription.objects.update_or_create(
+        member=request.user,
+        genre=genre,
+        defaults={'is_active': True}
+    )
+    messages.success(request, f"You've subscribed to {dict(Book.GENRE_CHOICES).get(genre)} notifications")
+    return redirect('book-list')
+
+@login_required
+def unsubscribe_from_genre(request, genre):
+    BookSubscription.objects.filter(
+        member=request.user,
+        genre=genre
+    ).update(is_active=False)
+    messages.success(request, f"You've unsubscribed from {dict(Book.GENRE_CHOICES).get(genre)} notifications")
+    return redirect('book-list')
 
 def user_login(request):
     if request.method == 'POST':
@@ -242,7 +264,7 @@ def active_loans(request):
     loans = Checkout.objects.filter(returned=False)
     if request.user.is_member():
         loans = loans.filter(member=request.user)
-    return render(request, 'accounts/active_loans.html', {'loans': loans})
+    return render(request, 'accounts/active_loans.html', {'checkouts': loans})  # <-- 'checkouts' is important
 
 @login_required
 @user_passes_test(lambda u: u.is_librarian_or_admin())
@@ -481,3 +503,30 @@ def generate_overdue_pdf(request):
     buffer.close()
     response.write(pdf)
     return response
+
+
+@user_passes_test(lambda u: u.is_staff)
+def send_due_notifications(request):
+    checkouts = Checkout.objects.filter(
+        returned=False,
+        due_date__lte=timezone.now() + timedelta(days=3)
+    )
+    count = 0
+    for checkout in checkouts:
+        checkout.send_due_notification()
+        count += 1
+    return JsonResponse({'status': 'success', 'notifications_sent': count})
+
+@user_passes_test(lambda u: u.is_staff)
+def send_reservation_notifications(request):
+    reservations = Reservation.objects.filter(
+        notified=False,
+        book__available__gt=0
+    )
+    count = 0
+    for reservation in reservations:
+        reservation.send_available_notification()
+        reservation.notified = True
+        reservation.save()
+        count += 1
+    return JsonResponse({'status': 'success', 'notifications_sent': count})

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>New Book Notification</title>
+</head>
+<body>
+    <h2>Hello {{ member.first_name }},</h2>
+    <p>A new book has been added to our library in your subscribed category <strong>{{ book.get_genre_display }}</strong>:</p>
+    
+    <div style="border: 1px solid #ddd; padding: 15px; margin: 10px 0;">
+        <h3>{{ book.title }}</h3>
+        <p>By {{ book.author }}</p>
+        <p>{{ book.description|truncatechars:200 }}</p>
+    </div>
+
+    <p>
+        <a href="{{ site_url }}{% url 'book-detail' pk=book.pk %}" 
+           style="background-color: #4CAF50; color: white; padding: 10px 15px; text-decoration: none;">
+            View Book Details
+        </a>
+    </p>
+
+    <p>Happy reading!</p>
+    <p>The {{ settings.SITE_NAME }} Team</p>
+</body>
+</html>

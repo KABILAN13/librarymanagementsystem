@@ -2,99 +2,127 @@
 
 {% block content %}
 <style>
+    body {
+        background: linear-gradient(to right, #e0f7fa, #f5faff);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: #1f2937;
+    }
+
     .container {
         max-width: 1200px;
         margin: auto;
         padding: 2rem;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .glass {
+        backdrop-filter: blur(12px);
+        background: rgba(255, 255, 255, 0.6);
+        border-radius: 1rem;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.3);
     }
 
     .hero {
-        background: linear-gradient(135deg, #f3f4f6, #e0f7fa);
-        padding: 3rem 2rem;
-        border-radius: 1rem;
         text-align: center;
+        padding: 3rem 2rem;
         margin-bottom: 3rem;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
     }
 
     .hero h1 {
-        font-size: 2.5rem;
+        font-size: 3rem;
+        font-weight: 700;
         margin-bottom: 1rem;
-        color: #333;
+        background: linear-gradient(to right, #00bcd4, #2196f3);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
     }
 
     .hero p {
-        font-size: 1.2rem;
-        color: #555;
+        font-size: 1.25rem;
+        color: #374151;
     }
 
     .section-title {
-        font-size: 1.8rem;
-        margin-bottom: 1rem;
-        color: #222;
+        font-size: 2rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
     }
 
     .book-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 1.5rem;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 2rem;
     }
 
     .book-card {
-        background-color: #fff;
         padding: 1.5rem;
-        border-radius: 0.75rem;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
-        transition: transform 0.2s ease;
+        transition: all 0.3s ease-in-out;
+        transform-style: preserve-3d;
+        cursor: pointer;
     }
 
     .book-card:hover {
-        transform: translateY(-5px);
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
     }
 
     .book-title {
-        font-size: 1.1rem;
+        font-size: 1.25rem;
         font-weight: bold;
         margin-bottom: 0.5rem;
-        color: #2c3e50;
+        color: #0d47a1;
     }
 
     .book-author {
-        color: #777;
+        color: #616161;
+        font-size: 1rem;
     }
 
     .alert {
-        background-color: #fff8e1;
-        border: 1px solid #ffe082;
-        padding: 1rem;
-        border-radius: 0.5rem;
+        grid-column: 1 / -1;
         text-align: center;
-        color: #8d6e63;
+        padding: 1.5rem;
+        background-color: #fff3cd;
+        border: 1px solid #ffeeba;
+        border-radius: 1rem;
         font-weight: 500;
+        color: #856404;
+    }
+
+    @media (max-width: 768px) {
+        .hero h1 {
+            font-size: 2.2rem;
+        }
+
+        .section-title {
+            font-size: 1.6rem;
+        }
     }
 </style>
 
 <div class="container">
-    <div class="hero">
+    <!-- Hero Section -->
+    <div class="glass hero">
         <h1>{{ welcome_message }}</h1>
         {% if user.is_authenticated %}
             <p>Hello, <strong>{{ user.username }}</strong>! Welcome back to your library 📚</p>
         {% else %}
-            <p>Please <a href="{% url 'login' %}">log in</a> to access the system.</p>
+            <p>Please <a href="{% url 'login' %}" style="color: #007b83; text-decoration: underline;">log in</a> to access the system.</p>
         {% endif %}
     </div>
 
-    <h2 class="section-title">Recent Books</h2>
+    <!-- Book Section -->
+    <h2 class="section-title">📚 Recent Books</h2>
 
     <div class="book-grid">
         {% for book in recent_books %}
-            <div class="book-card">
+            <div class="glass book-card">
                 <div class="book-title">{{ book.title }}</div>
                 <div class="book-author">by {{ book.author }}</div>
             </div>
         {% empty %}
-            <div class="alert">No books available yet. Check back soon!</div>
+            <div class="alert">🚫 No books available yet. Check back soon!</div>
         {% endfor %}
     </div>
 </div>
